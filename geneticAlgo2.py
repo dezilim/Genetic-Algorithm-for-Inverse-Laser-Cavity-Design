@@ -408,7 +408,7 @@ def sim_randomChunks_hole(N, offset, nb_chunks, maxSize_chunks, design, hole_sta
         for i in range(nb_chunks):
             # get a random x,y,z coord and size to remove 
             
-            size = randrange(maxSize_chunks) +2;
+            size = randrange(maxSize_chunks);
             xi = randrange(N-size) + padding ; yi = randrange(N-size) + padding; zi = randrange(N-size) + 1 + padding; 
             print("Chosen (x,y,z, size): " , xi, yi, zi, size)
             psi = psi_removeChunk(N, psi, xi, yi, zi, size)
@@ -648,15 +648,15 @@ def sim_randomChunks_hole(N, offset, nb_chunks, maxSize_chunks, design, hole_sta
     delta_L = np.abs(ave_final_L - ave_initial_L)
     
     
-    plt.figure(figsize=(10,10))
+    plt.figure(figsize=(5,5))
     plt.xlim([0, N]); plt.ylim([0,N])
     plt.title("Mirror Coordinates")
     plt.xlabel("X")
     plt.ylabel("Y")
-    plt.plot(i_x_left_mirror, i_y_left_mirror, 'k.')
+    plt.plot(i_x_left_mirror, i_y_left_mirror, 'k.', label = "initial")
     plt.plot(i_x_right_mirror, i_y_right_mirror, 'k.')
 
-    plt.plot(f_x_left_mirror, f_y_left_mirror, 'r.')
+    plt.plot(f_x_left_mirror, f_y_left_mirror, 'r.', label = "final")
     plt.plot(f_x_right_mirror, f_y_right_mirror, 'r.')
 
     plt.grid()
@@ -678,7 +678,7 @@ def sim_randomChunks_hole(N, offset, nb_chunks, maxSize_chunks, design, hole_sta
 #     ax.set_xlabel('$X$')
 #     ax.set_ylabel('$Y$')
 #     ax.set_zlabel('$Z$')
-
+    plt.legend()
     plt.show()
     
 #     fig = plt.figure()
@@ -884,15 +884,15 @@ def sim_fromState(N, psi, mesh_res, file_name):
     print("=======================================================\n")
     delta_L = np.abs(ave_final_L - ave_initial_L)
     
-    plt.figure(figsize=(10,10))
+    plt.figure(figsize=(5,5))
     plt.xlim([0, N]); plt.ylim([0,N])
     plt.title("Mirror Coordinates")
     plt.xlabel("X")
     plt.ylabel("Y")
-    plt.plot(i_x_left_mirror, i_y_left_mirror, 'k.')
+    plt.plot(i_x_left_mirror, i_y_left_mirror, 'k.', label = "initial")
     plt.plot(i_x_right_mirror, i_y_right_mirror, 'k.')
 
-    plt.plot(f_x_left_mirror, f_y_left_mirror, 'r.')
+    plt.plot(f_x_left_mirror, f_y_left_mirror, 'r.', label = "final")
     plt.plot(f_x_right_mirror, f_y_right_mirror, 'r.')
 
     plt.grid()
@@ -915,6 +915,7 @@ def sim_fromState(N, psi, mesh_res, file_name):
 #     ax.set_xlabel('$X$')
 #     ax.set_ylabel('$Y$')
 #     ax.set_zlabel('$Z$')
+    plt.legend()
     plt.show()
     
     
@@ -934,7 +935,31 @@ def sim_fromState(N, psi, mesh_res, file_name):
 
 
 
-def breed_crossover(p1, p2, crossover_pt1, crossover_pt2, N, invert):
+def breed_crossover1(p1, p2, crossover_pt1, N, invert):
+    child = []
+#     child_front = p1[0:crossover_pt1]
+#     print("FRONT:", child_front)
+#     child_middle = p2[crossover_pt1:crossover_pt2]
+#     print("MIDDLE:", child_middle)
+
+#     child_end = p1[crossover_pt2:N]
+    
+#     child = child_front + child_middle + child_end
+    for i in range(crossover_pt1):
+        child.append(p1[i])
+        
+    for j in range(N*N*N-crossover_pt1):
+        child.append(p2[crossover_pt1 + j])
+        
+    if (invert == 1):
+        print("-- Crossover breed inverted --")
+        child = breed_invert(child)
+        
+    return (child)
+
+
+
+def breed_crossover2(p1, p2, crossover_pt1, crossover_pt2, N, invert):
     child = []
 #     child_front = p1[0:crossover_pt1]
 #     print("FRONT:", child_front)
@@ -990,16 +1015,17 @@ def breed_random(p1, p2, N):
 # MAIN CODE 
 # ===========================================
 # ===========================================
-
+# random corssover. np pop 20 , nb breed 100 , nbchunks 15
 def main():
     # size of initial population
     nb_pop = 20; psi_array = []; u_max_array = []; delta_L_array =[];
     nb_breed = 100; 
     N = 12
-    offset = 6
-    nb_chunks = 8 # i use 4 for subtractive and 8 for generative 
-    maxSize_chunks = 3 # this + padding in simRandomChunks_hole must be equals to offset at the most
+    offset = 6 # not really used anymore.
+    nb_chunks = 30 # i use 5 for subtractive and 8 for generative 
+    maxSize_chunks = 3 # not so constrained anymore. Ensure less than N
     mesh_res = 10
+    
     
     
     print("%%%%%%%%%%%%%%% DETAILS OF RUN %%%%%%%%%%%%%%%")
@@ -1016,7 +1042,7 @@ def main():
         print("current i: ", i)
         try: 
             print("--TRYING TO CREATE ", i)
-            [psi, u_max, delta_L] = sim_randomChunks_hole(N, offset, nb_chunks, maxSize_chunks, "generative", "HORIZONTAL", mesh_res, "Gen_H_supp_N12_100922_"+"parent_"+str(i))
+            [psi, u_max, delta_L] = sim_randomChunks_hole(N, offset, nb_chunks, maxSize_chunks, "subtractive", "HORIZONTAL", mesh_res, "SUB_CO2_H_supp_N12_c30_"+"parent_"+str(i))
             psi_array.append(psi); u_max_array.append(u_max); delta_L_array.append(delta_L)
             print(">>>>>> SUCCESSFUL >>>>>>")
         except: 
@@ -1050,6 +1076,8 @@ def main():
     
     print(".\n.\n.\n.\n.\n.\n.")
     winner_index = [-1]*nb_pop
+    
+    child_count = 0
     for i in range(nb_breed):
         
         if (i>10):
@@ -1111,6 +1139,8 @@ def main():
         # N = 12
         crossoverpt1 = 300;
         crossoverpt2 = 800;  
+#         crossoverpt = randrange(N*N*N-N*N) + N*N
+        
         
 #         # N = 20
 #         crossoverpt1 = 2500;
@@ -1130,12 +1160,16 @@ def main():
         print("Worst parent for umax : ", worst_uMax_parent_index)
         print("Worst parent for delta L : ", worst_L_parent_index)
         print("(Crossoverpt1, Crossoverpt2) : " , crossoverpt1, ", " , crossoverpt2)
+#         print("Random Crossoverpoint Chosen:", crossoverpt)
         print("Invert ? : ", invert)
         print("Nb_mutations : ", nb_mutations)
         print("========================================")
         
+        # one point crossover
+#         child = breed_crossover1(p1, p2, crossoverpt, N, invert)    
         
-        child = breed_crossover(p1, p2, crossoverpt1, crossoverpt2, N, invert)    
+        # two point crossover 
+        child = breed_crossover2(p1, p2, crossoverpt1, crossoverpt2, N, invert)    
 #         print("Child: ", child)
         # mutate
         # mutation_indices gives the elements that you can possibily mutate. We dont want to mutate the bottomost and top most layer
@@ -1153,8 +1187,9 @@ def main():
         # if the child is not possible, I want to skip the child
         try: 
             print("--TRYING TO CREATE CHILD", i)
-            [child_u_max, child_delta_L] = sim_fromState(N, child, mesh_res, "Gen_H_supp_N12_100922_" + "breedSize_50_" +"child_" + str(i))
+            [child_u_max, child_delta_L] = sim_fromState(N, child, mesh_res, "SUB_CO2_H_supp_N12_c30_" + "breedSize_100_" +"child_" + str(i))
             print("--------Child is successfully simulated.--------")
+            child_count += 1
             
             # if the child has a lesser deformation, we replace the worst parent in the population. 
             # otherwise, we forget about the child 
@@ -1189,7 +1224,7 @@ def main():
     print("u_max_array : \n" , u_max_array)
     print("delta_L_array : \n" , delta_L_array)
     print("winner_index_array : \n," , winner_index)
-
+    print("Child count: \n,", child_count)
     print("Time taken: %s seconds" % (time.time() - start_time))
     print("Done")
 
